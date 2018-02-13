@@ -27,7 +27,7 @@ module OData
       # return if we can find constant corresponding to class name
       already_defined = eval("defined?(#{@klass_name}) == 'constant' and #{@klass_name}.class == Class")
       if already_defined
-        @klass = @klass_name.constantize
+        @klass = @klass_name.safe_constantize
         return @klass
       end
 
@@ -51,7 +51,7 @@ module OData
         Object.const_set(@klass_name, Class.new.extend(ActiveSupport::JSON))
       end
 
-      @klass = @klass_name.constantize
+      @klass = @klass_name.safe_constantize
       @klass.class_eval do
         include OData
       end
