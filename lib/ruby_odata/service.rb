@@ -60,10 +60,10 @@ class Service
   # @param [Object] obj the object to queue for update
   #
   # @raise [NotSupportedError] if the `obj` isn't a tracked entity
-  def update_object(obj)
+  def update_object(obj, data)
     type = obj.class.to_s
     if obj.respond_to?(:__metadata) && !obj.send(:__metadata).nil?
-      @save_operations << Operation.new("Update", type, obj)
+      @save_operations << Operation.new("Update", type, obj, data)
     else
       raise OData::NotSupportedError.new "You cannot update a non-tracked entity"
     end
@@ -168,6 +168,10 @@ class Service
     @save_operations << Operation.new("AddLink", nav_prop, parent, child)
   end
 
+  def set_rest_options(options)
+    @rest_options.merge!(options[:rest_options] || {})
+  end
+
   private
 
   # Constructs a QueryBuilder instance for a collection using the arguments provided.
@@ -236,14 +240,18 @@ class Service
   end
 
   def set_namespaces
-    @edmx = Nokogiri::XML(OData::Resource.new(build_metadata_uri, @rest_options).get.body)
+    request_body = if options[:metadata_file]
+                    File.read(options[:metadata_file])
+                  else
+                    OData::Resource.new(build_metadata_uri, @rest_options).get.body
+                  end
+    @edmx = Nokogiri::XML(request_body)
     @ds_namespaces = {
       "m" => "http://schemas.microsoft.com/ado/2007/08/dataservices/metadata",
       "edmx" => "http://schemas.microsoft.com/ado/2007/06/edmx",
       "ds" => "http://schemas.microsoft.com/ado/2007/08/dataservices",
       "atom" => "http://www.w3.org/2005/Atom"
     }
-
     # Get the edm namespace from the edmx
     edm_ns = @edmx.xpath("edmx:Edmx/edmx:DataServices/*", @namespaces).first.namespaces['xmlns'].to_s
     @ds_namespaces.merge! "edm" => edm_ns
@@ -382,7 +390,7 @@ class Service
     message = if error.xpath("m:error/m:message", @ds_namespaces).first
                 error.xpath("m:error/m:message", @ds_namespaces).first.content
               else
-                "Server returned error but no message."
+                "Server returned error but no message. #{e.response[:body]}"
               end
     raise ServiceError.new(code), message
   end
@@ -674,7 +682,8 @@ class Service
       content << json_klass
     elsif operation.kind == "Update"
       update_uri = operation.klass.send(:__metadata)[:uri]
-      json_klass = operation.klass.to_json
+      json_klass = operation.data.to_json
+      update_uri << "?#{@additional_params.to_query}" unless @additional_params.empty?
 
       content << "PUT #{update_uri} HTTP/1.1\n"
       content << accept_headers

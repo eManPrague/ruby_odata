@@ -44,7 +44,7 @@ module OData
       @conn.post do |req|
         req.url url
         req.headers = (headers || {}).merge(additional_headers)
-        req.body = prepare_payload payload
+        req.body = payload
       end
     end
 
