@@ -76,11 +76,11 @@ class Service
     result = nil
 
     begin
-      if @save_operations.length == 1
-        result = single_save(@save_operations[0])
-      else
+      # if @save_operations.length == 1
+        # result = single_save(@save_operations[0])
+      # else
         result = batch_save(@save_operations)
-      end
+      # end
 
       # TODO: We should probably perform a check here
       # to make sure everything worked before clearing it out
