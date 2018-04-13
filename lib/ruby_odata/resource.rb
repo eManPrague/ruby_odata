@@ -1,3 +1,5 @@
+require "logger"
+
 module OData
   class Resource
     attr_reader :url, :options, :block
@@ -10,6 +12,7 @@ module OData
       @conn = Faraday.new(url: url, ssl: { verify: verify_ssl }) do |faraday|
         faraday.use      :gzip
         faraday.response :raise_error
+        faraday.response :logger, ::Logger.new(STDOUT), bodies: true, headers: false
         faraday.adapter  :excon
 
         faraday.options.timeout      = timeout if timeout
