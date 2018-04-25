@@ -12,7 +12,7 @@ module OData
       @conn = Faraday.new(url: url, ssl: { verify: verify_ssl }) do |faraday|
         faraday.use      :gzip
         faraday.response :raise_error
-        faraday.response :logger, ::Logger.new(STDOUT), bodies: true, headers: false
+        faraday.response :logger, Logger.new("log/odata_log.log"), bodies: true, headers: false
         faraday.adapter  :excon
 
         faraday.options.timeout      = timeout if timeout
@@ -23,7 +23,7 @@ module OData
           :accept => '*/*; q=0.5, application/xml',
         })
 
-        faraday.basic_auth user, password if user# this adds to headers so must be behind
+        faraday.basic_auth user, password if user # this adds to headers so must be behind
       end
 
       @conn.headers[:user_agent] = 'Ruby'
