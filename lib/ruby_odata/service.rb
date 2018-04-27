@@ -666,7 +666,10 @@ class Service
   end
   def build_batch_operation(operation, changeset_num)
     accept_headers = "Accept-Charset: utf-8\n"
-    accept_headers << "Content-Type: application/json;charset=utf-8\n" unless operation.kind == "Delete"
+    accept_headers << "MaxDataServiceVersion: 2.0\n"
+    accept_headers << "DataServiceVersion: 2.0\n"
+    accept_headers << "Content-Type: application/json\n" unless operation.kind == "Delete"
+    accept_headers << "Content-Length: 54\n"
     accept_headers << "\n"
 
     content = "--changeset_#{changeset_num}\n"
